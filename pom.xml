@@ -1,0 +1,99 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>melttool</groupId>
+    <artifactId>TIM</artifactId>
+    <packaging>jar</packaging>
+    <version>1.0</version>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <matching.version>2.0</matching.version> <!-- version for all matching related packages -->
+        <!-- possible values: "BaselineLabel", "BaselineAltLabel", "BaselineAnchorLabel" -->
+        <oaei.mainClass>tim.TIM_Matcher</oaei.mainClass>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.17</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.17</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.uni-mannheim.informatik.dws.melt</groupId>
+            <artifactId>receiver-http</artifactId>
+            <version>3.4-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.uni-mannheim.informatik.dws.melt</groupId>
+            <artifactId>matching-eval</artifactId>
+            <version>3.4-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>11</source>
+                    <target>11</target>
+                </configuration>
+            </plugin>
+
+            <!-- the following plugin will generate a docker image and save it into the target folder -->
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.36.0</version>
+                <configuration>
+                    <!-- further machine configuration options: https://dmp.fabric8.io/#docker-machine
+                         Use the following line in case you have installed docker on windows or mac
+                    <machine><name>default</name></machine>
+                    -->
+                    <images>
+                        <image>
+                            <name>%a-%v-web</name>
+                            <build>
+                                <from>adoptopenjdk/openjdk11:latest</from><!--change it to a docker base image you want - this is just a small image which contains java-->
+                                <assembly><descriptorRef>web</descriptorRef></assembly>
+                                <cmd><shell>java -cp "${project.build.finalName}.${project.packaging}:lib/*" de.uni_mannheim.informatik.dws.melt.receiver_http.Main</shell></cmd>
+                                <workdir>/maven</workdir>
+                                <ports><port>8080</port></ports><!--port exposure to specify on which port the server runs -->
+                            </build>
+                        </image>
+                    </images>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>de.uni-mannheim.informatik.dws.melt</groupId>
+                        <artifactId>matching-assembly</artifactId>
+                        <version>3.4-SNAPSHOT</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>save</goal>
+                        </goals>
+                        <!--execute build and save when calling "mvn install" -->
+                        <phase>install</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+
+
+
+</project>
