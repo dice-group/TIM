@@ -10,7 +10,6 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.util.iterator.ExtendedIterator;
 
-import javax.swing.plaf.nimbus.State;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -54,7 +53,7 @@ public abstract class Matcher implements IMatcher {
 
     protected String lowercaseExceptNULL(String s) {
         if (s == null) {
-            return "NULL";
+            return "";
         }
         return s.toLowerCase();
     }
@@ -93,7 +92,7 @@ public abstract class Matcher implements IMatcher {
 
 
     protected String createStringRepresentationBasedOnLabelAndAltLabel(Resource resource) {
-        String label = getLabel(resource);
+        String label = getLabelOrUriEndIfNoLabelPresent(resource);
         String altLabel = getAltLabel(resource);
         return lowercaseExceptNULL(label) + STRING_SEPARATOR + lowercaseExceptNULL(altLabel);
     }
@@ -113,7 +112,7 @@ public abstract class Matcher implements IMatcher {
         Map<String, Set<OntResource>> stringMap = new ConcurrentHashMap<>();
         source.parallel().forEach(sourceThing -> {
             String attribute = resourceToStringFunctionForSources.apply(sourceThing);
-            if (attribute != null) {
+            if (attribute != null && !attribute.equals(STRING_SEPARATOR)) {
                 stringMap.computeIfAbsent(attribute, k -> new HashSet<>()).add(sourceThing);
             }
         });
@@ -172,12 +171,19 @@ public abstract class Matcher implements IMatcher {
         return findPairsWithEqualStringFunction(source.stream(), target.stream(), resourceToStringFunctionForSources, resourceToStringFunctionForTargets);
     }
 
-    protected static String getLabel(Resource ontResource) {
+    protected static String getLabelOrUriEndIfNoLabelPresent(Resource ontResource) {
         Model model = ontResource.getModel();
         Property property = model.getProperty(URI_LABEL);
         ExtendedIterator<String> iterator = ontResource.listProperties(property).mapWith(statement -> statement.getObject().asLiteral().getLexicalForm());
         if (iterator.hasNext()) {
             return iterator.next();
+        }
+        if(ontResource.getURI() == null){
+            return null;
+        }
+        String[] uriParts = ontResource.getURI().split("[./#]");
+        if(uriParts.length > 0){
+            return uriParts[uriParts.length-1];
         }
         return null;
     }

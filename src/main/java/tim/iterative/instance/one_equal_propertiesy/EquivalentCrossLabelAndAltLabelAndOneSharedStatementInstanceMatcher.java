@@ -7,6 +7,6 @@ import tim.iterative.instance.EquivalentStringFunctionAndXSharedPropertyInstance
 public class EquivalentCrossLabelAndAltLabelAndOneSharedStatementInstanceMatcher extends EquivalentStringFunctionAndXSharedPropertyInstanceMatcher {
 
     public EquivalentCrossLabelAndAltLabelAndOneSharedStatementInstanceMatcher() {
-        super(1, Pair.of(Matcher::getLabel, Matcher::getAltLabel));
+        super(1, Pair.of(Matcher::getLabelOrUriEndIfNoLabelPresent, Matcher::getAltLabel));
     }
 }
