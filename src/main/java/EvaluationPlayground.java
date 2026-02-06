@@ -6,7 +6,7 @@ import tim.TIM_Matcher;
 
 public class EvaluationPlayground {
     public static void main(String[] args) throws Exception {
-        ExecutionResultSet result = Executor.run(TrackRepository.Conference.V1,
+        ExecutionResultSet result = Executor.run(TrackRepository.Knowledgegraph.V4,
                 new TIM_Matcher()
         );
         EvaluatorCSV evaluatorCSV = new EvaluatorCSV(result);
