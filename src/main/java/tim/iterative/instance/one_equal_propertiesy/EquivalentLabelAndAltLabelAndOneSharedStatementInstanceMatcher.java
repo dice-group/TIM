@@ -5,6 +5,6 @@ import tim.iterative.instance.EquivalentStringFunctionAndXSharedPropertyInstance
 public class EquivalentLabelAndAltLabelAndOneSharedStatementInstanceMatcher extends EquivalentStringFunctionAndXSharedPropertyInstanceMatcher {
 
     public EquivalentLabelAndAltLabelAndOneSharedStatementInstanceMatcher() {
-        super(1, individual -> getLabel(individual) + STRING_SEPARATOR + getAltLabel(individual));
+        super(1, individual -> getLabelOrUriEndIfNoLabelPresent(individual) + STRING_SEPARATOR + getAltLabel(individual));
     }
 }

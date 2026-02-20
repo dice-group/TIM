@@ -6,6 +6,6 @@ import tim.iterative.instance.EquivalentStringFunctionAndXSharedPropertyInstance
 public class EquivalentLabelAndOneSharedStatementInstanceMatcher extends EquivalentStringFunctionAndXSharedPropertyInstanceMatcher {
 
     public EquivalentLabelAndOneSharedStatementInstanceMatcher() {
-        super(2, Matcher::getLabel);
+        super(2, Matcher::getLabelOrUriEndIfNoLabelPresent);
     }
 }

@@ -32,8 +32,12 @@ public class IterativeTieredMatcherWIthBootstrapMatchersWhenNothingIsFound exten
     public void runIteration() {
         for (IMatcher bootstrapMatcher : bootstrapMatchers) {
             System.out.println("Running bootstrap matcher " + bootstrapMatcher.getName());
+            int before = computeTotalMatches(state);
             runMatcher(bootstrapMatcher);
-            runTieredIterativeMatchers();
+            int after = computeTotalMatches(state);
+            if(after > before){
+                runTieredIterativeMatchers();
+            }
         }
     }
 

@@ -10,7 +10,6 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.util.iterator.ExtendedIterator;
 
-import javax.swing.plaf.nimbus.State;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -54,7 +53,7 @@ public abstract class Matcher implements IMatcher {
 
     protected String lowercaseExceptNULL(String s) {
         if (s == null) {
-            return "NULL";
+            return "";
         }
         return s.toLowerCase();
     }
@@ -63,6 +62,12 @@ public abstract class Matcher implements IMatcher {
         if (input == null) {
             return List.of();
         }
+
+        //Split camelcase
+        input = input.replaceAll(
+                "(?<=[a-z])(?=[A-Z])", " "
+        );
+
         String[] parts = input.split("[ ,_]|\\. |\\? |! ");
         return Arrays.asList(parts);
     }
@@ -93,7 +98,7 @@ public abstract class Matcher implements IMatcher {
 
 
     protected String createStringRepresentationBasedOnLabelAndAltLabel(Resource resource) {
-        String label = getLabel(resource);
+        String label = getLabelOrUriEndIfNoLabelPresent(resource);
         String altLabel = getAltLabel(resource);
         return lowercaseExceptNULL(label) + STRING_SEPARATOR + lowercaseExceptNULL(altLabel);
     }
@@ -113,7 +118,7 @@ public abstract class Matcher implements IMatcher {
         Map<String, Set<OntResource>> stringMap = new ConcurrentHashMap<>();
         source.parallel().forEach(sourceThing -> {
             String attribute = resourceToStringFunctionForSources.apply(sourceThing);
-            if (attribute != null) {
+            if (attribute != null && !attribute.equals(STRING_SEPARATOR)) {
                 stringMap.computeIfAbsent(attribute, k -> new HashSet<>()).add(sourceThing);
             }
         });
@@ -172,12 +177,19 @@ public abstract class Matcher implements IMatcher {
         return findPairsWithEqualStringFunction(source.stream(), target.stream(), resourceToStringFunctionForSources, resourceToStringFunctionForTargets);
     }
 
-    protected static String getLabel(Resource ontResource) {
+    protected static String getLabelOrUriEndIfNoLabelPresent(Resource ontResource) {
         Model model = ontResource.getModel();
         Property property = model.getProperty(URI_LABEL);
         ExtendedIterator<String> iterator = ontResource.listProperties(property).mapWith(statement -> statement.getObject().asLiteral().getLexicalForm());
         if (iterator.hasNext()) {
             return iterator.next();
+        }
+        if (ontResource.getURI() == null) {
+            return null;
+        }
+        String[] uriParts = ontResource.getURI().split("[./#]");
+        if (uriParts.length > 0) {
+            return uriParts[uriParts.length - 1];
         }
         return null;
     }
@@ -202,22 +214,22 @@ public abstract class Matcher implements IMatcher {
         OntResource source = pair.getLeft();
         OntResource target = pair.getRight();
         if (source instanceof OntClass && target instanceof OntClass) {
-            synchronized (this){
-                if(state.isSourceClassStillUnmatched((OntClass) source) && state.isTargetClassStillUnmatched((OntClass) target)) {
+            synchronized (this) {
+                if (state.isSourceClassStillUnmatched((OntClass) source) && state.isTargetClassStillUnmatched((OntClass) target)) {
                     state.matchClasses(source.asClass(), target.asClass());
                     passUpClassMatch((Pair<OntClass, OntClass>) pair);
                 }
             }
         } else if (source instanceof OntProperty && target instanceof OntProperty) {
-            synchronized (this){
-                if(state.isSourcePropertyStillUnmatched((OntProperty) source) && state.isTargetPropertyStillUnmatched((OntProperty) target)) {
+            synchronized (this) {
+                if (state.isSourcePropertyStillUnmatched((OntProperty) source) && state.isTargetPropertyStillUnmatched((OntProperty) target)) {
                     state.matchProperties(source.asProperty(), target.asProperty());
                     passUpPropertyMatch((Pair<OntProperty, OntProperty>) pair);
                 }
             }
         } else {
-            synchronized (this){
-                if(state.isSourceInstanceStillUnmatched(source) && state.isTargetInstanceStillUnmatched(target)) {
+            synchronized (this) {
+                if (state.isSourceInstanceStillUnmatched(source) && state.isTargetInstanceStillUnmatched(target)) {
                     state.matchIndividuals(source, target);
                     passUpInstanceMatch((Pair<OntResource, OntResource>) pair);
                 }
@@ -225,7 +237,7 @@ public abstract class Matcher implements IMatcher {
         }
     }
 
-    public static void runAsyncAndWaitForCompletion(Runnable... tasks){
+    public static void runAsyncAndWaitForCompletion(Runnable... tasks) {
         Arrays.stream(tasks).parallel().forEach(Runnable::run);
     }
 

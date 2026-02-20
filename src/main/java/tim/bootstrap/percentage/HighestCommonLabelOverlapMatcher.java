@@ -17,12 +17,20 @@ public abstract class HighestCommonLabelOverlapMatcher extends BootstrapMatcher 
         Map<OntResource, Double> maxForTarget = new HashMap<>();
 
         for (OntResource sourceThing : sourceUnmatched) {
-            String sourceLabel = lowercaseExceptNULL(sourceThing.getLabel(null));
+            String sourceLabel = getLabelOrUriEndIfNoLabelPresent(sourceThing);
+            if(sourceLabel == null){
+                continue;
+            }
             List<String> sourceLabelWords = splitIntoWords(sourceLabel);
+            sourceLabelWords.replaceAll(String::toLowerCase);
 
             for (OntResource targetThing : targetUnmatched) {
-                String targetLabel = lowercaseExceptNULL(targetThing.getLabel(null));
+                String targetLabel = getLabelOrUriEndIfNoLabelPresent(targetThing);
+                if(targetLabel == null){
+                    continue;
+                }
                 List<String> targetLabelWords = splitIntoWords(targetLabel);
+                targetLabelWords.replaceAll(String::toLowerCase);
 
                 double overlap = jaccardListOverlap(sourceLabelWords, targetLabelWords);
 

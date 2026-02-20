@@ -7,6 +7,6 @@ import org.apache.commons.lang3.tuple.Pair;
 public class EquivalentCrossLabelAndAltLabelAndTwoSharedStatementsInstanceMatcher extends EquivalentStringFunctionAndXSharedPropertyInstanceMatcher {
 
     public EquivalentCrossLabelAndAltLabelAndTwoSharedStatementsInstanceMatcher() {
-        super(2, Pair.of(Matcher::getLabel, Matcher::getAltLabel));
+        super(2, Pair.of(Matcher::getLabelOrUriEndIfNoLabelPresent, Matcher::getAltLabel));
     }
 }

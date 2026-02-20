@@ -1,5 +1,6 @@
 package tim;
 
+import tim.bootstrap.BootstrapMatcher;
 import tim.bootstrap.equivalence.clazz.EquivalentClassLabelMatcher;
 import tim.bootstrap.equivalence.instance.EquivalentLabelAndAltLabelInstanceMatcher;
 import tim.bootstrap.equivalence.instance.UniqueWordInAnyLiteralInstanceMatcher;
@@ -24,41 +25,54 @@ import java.util.List;
 public class TIM_Matcher extends MeltMatcherWrapper {
     public TIM_Matcher() {
         super(
-                new IterativeTieredMatcherWIthBootstrapMatchersWhenNothingIsFound(
-                        List.of(
-                                new EquivalentInstanceLabelMatcherForSameClass()
-                                , new RelatedToExistingMatchAndEquivalentLabelInstanceMatcher()
+                new SequentialMatcherCombiner(new IMatcher[]{
+                        new IterativeTieredMatcherWIthBootstrapMatchersWhenNothingIsFound(
+                                List.of(
+                                        new EquivalentInstanceLabelMatcherForSameClass()
+                                        , new RelatedToExistingMatchAndEquivalentLabelInstanceMatcher()
 
-                                , new EquivalentLabelAndAltLabelAndTwoSharedStatementsInstanceMatcher()
-                                , new EquivalentLabelAndTwoSharedStatementsInstanceMatcher()
-                                , new EquivalentAltLabelAndTwoSharedStatementsInstanceMatcher()
-                                , new EquivalentCrossLabelAndAltLabelAndTwoSharedStatementsInstanceMatcher()
-                                , new EquivalentCrossAltLabelAndLabelAndTwoSharedStatementsInstanceMatcher()
+                                        , new EquivalentLabelAndAltLabelAndTwoSharedStatementsInstanceMatcher()
+                                        , new EquivalentLabelAndTwoSharedStatementsInstanceMatcher()
+                                        , new EquivalentAltLabelAndTwoSharedStatementsInstanceMatcher()
+                                        , new EquivalentCrossLabelAndAltLabelAndTwoSharedStatementsInstanceMatcher()
+                                        , new EquivalentCrossAltLabelAndLabelAndTwoSharedStatementsInstanceMatcher()
 
-                                , new EquivalentLabelAndAltLabelAndOneSharedStatementInstanceMatcher()
-                                , new EquivalentLabelAndOneSharedStatementInstanceMatcher()
-                                , new EquivalentAltLabelAndOneSharedStatementInstanceMatcher()
-                                , new EquivalentCrossLabelAndAltLabelAndOneSharedStatementInstanceMatcher()
-                                , new EquivalentCrossAltLabelAndLabelAndOneSharedStatementInstanceMatcher()
+                                        , new EquivalentLabelAndAltLabelAndOneSharedStatementInstanceMatcher()
+                                        , new EquivalentLabelAndOneSharedStatementInstanceMatcher()
+                                        , new EquivalentAltLabelAndOneSharedStatementInstanceMatcher()
+                                        , new EquivalentCrossLabelAndAltLabelAndOneSharedStatementInstanceMatcher()
+                                        , new EquivalentCrossAltLabelAndLabelAndOneSharedStatementInstanceMatcher()
 
-                                , new MatchPropertiesBasedOnUniqueSubjectObjectCombinations()
-                                , new InstancesWithCommonUniqueStatementMatcher()
-                                , new NewClassMatcherBasedOnMatchedIndividuals()
-                        ),
-                        List.of(
-                                new SequentialMatcherCombiner(
-                                        new EquivalentURIPropertyLabelMatcher()
-                                        , new EquivalentClassLabelMatcher()
-                                        , new EquivalentPropertyLabelAndAltLabelMatcher()
+                                        , new MatchPropertiesBasedOnUniqueSubjectObjectCombinations()
+                                        , new InstancesWithCommonUniqueStatementMatcher()
+                                        , new NewClassMatcherBasedOnMatchedIndividuals()
+                                ),
+                                List.of(
+                                        new SequentialMatcherCombiner(
+                                                new EquivalentURIPropertyLabelMatcher()
+                                                , new EquivalentClassLabelMatcher()
+                                                , new EquivalentPropertyLabelAndAltLabelMatcher()
+                                        )
+                                        , new HighestCommonWordPercentageInClassLabelMatcher()
+                                        , new HighestCommonWordPercentageInRelationLabelMatcher()
+                                        , new EquivalentLabelAndAltLabelInstanceMatcher()
+                                        , new UniqueSharedStatementInstanceMatcher()
+                                        , new UniqueWordInAnyLiteralInstanceMatcher()
+
                                 )
-                                , new HighestCommonWordPercentageInClassLabelMatcher()
-                                , new HighestCommonWordPercentageInRelationLabelMatcher()
-                                , new EquivalentLabelAndAltLabelInstanceMatcher()
-                                , new UniqueSharedStatementInstanceMatcher()
-                                , new UniqueWordInAnyLiteralInstanceMatcher()
-
                         )
-                )
+                        ,
+                        new BootstrapMatcher() { //Remove w3.org matches that should not be matched in OAEI tracks
+                            @Override
+                            public void run() {
+                                state.getMatchedProperties().stream().filter(ontPropertyOntPropertyPair -> ontPropertyOntPropertyPair.getLeft().getURI().startsWith("http://www.w3.org/") ||
+                                ontPropertyOntPropertyPair.getRight().getURI().startsWith("http://www.w3.org/")).forEach(ontPropertyOntPropertyPair -> {
+                                    state.getAlignment().removeCorrespondencesSource(ontPropertyOntPropertyPair.getLeft().getURI());
+                                    state.getAlignment().removeCorrespondencesTarget(ontPropertyOntPropertyPair.getRight().getURI());
+                                });
+                            }
+                        }
+                })
         );
     }
 }
