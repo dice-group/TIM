@@ -12,10 +12,7 @@ import org.apache.jena.ontology.OntResource;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Statement;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
@@ -56,12 +53,27 @@ public class MappingState {
 
         //This has to be run before initializing allStatementRepresentationsForTargetEntity, statementsForSourceProperty, statementsWithSourceAsObjectProperty
         createOntProperties();
+        createOntResources();
         this.sourcePropertiesUnmatched = new HashSet<>(sourceOntology.listAllOntProperties().toSet());
         this.targetPropertiesUnmatched = new HashSet<>(targetOntology.listAllOntProperties().toSet());
         this.sourceClassesUnmatched = new HashSet<>(sourceOntology.listClasses().toSet());
         this.targetClassesUnmatched = new HashSet<>(targetOntology.listClasses().toSet());
-        this.sourceInstancesUnmatched = new HashSet<>(sourceOntology.listIndividuals().toSet());
-        this.targetInstancesUnmatched = new HashSet<>(targetOntology.listIndividuals().toSet());
+
+        this.sourceInstancesUnmatched = new HashSet<>();
+        sourceOntology.listStatements().forEach(statement -> {
+            this.sourceInstancesUnmatched.add(sourceOntology.getOntResource(statement.getSubject().asResource().getURI()));
+            if(statement.getObject().isResource()) {
+                this.sourceInstancesUnmatched.add(sourceOntology.getOntResource(statement.getObject().asResource().getURI()));
+            }
+        });
+
+        this.targetInstancesUnmatched = new HashSet<>();
+        targetOntology.listStatements().forEach(statement -> {
+            this.targetInstancesUnmatched.add(targetOntology.getOntResource(statement.getSubject().asResource().getURI()));
+            if(statement.getObject().isResource()) {
+                this.targetInstancesUnmatched.add(targetOntology.getOntResource(statement.getObject().asResource().getURI()));
+            }
+        });
 
         this.matchedClasses = new HashSet<>();
         this.matchedProperties = new HashSet<>();
@@ -150,6 +162,48 @@ public class MappingState {
             propertiesToCreate.forEach(targetOntology::createOntProperty);
         }, forkJoinPool);
         CompletableFuture.allOf(sourceFuture, targetFuture).join();
+    }
+
+    private void createOntResources() {
+        ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
+        CompletableFuture<Void> sourceFuture = CompletableFuture.runAsync(() -> {
+            Set<String> resourcesToCreate = JenaStreamUtils.toStream(sourceOntology.listStatements())
+                    .parallel()
+                    .map(statement -> statement.getSubject().getURI())
+                    .filter(propertyUri -> sourceOntology.getOntProperty(propertyUri) == null)
+                    .collect(Collectors.toSet());
+            resourcesToCreate.forEach(sourceOntology::createOntResource);
+        }, forkJoinPool);
+        CompletableFuture<Void> targetFuture = CompletableFuture.runAsync(() -> {
+            Set<String> resourcesToCreate = JenaStreamUtils.toStream(targetOntology.listStatements())
+                    .parallel()
+                    .map(statement -> statement.getSubject().getURI())
+                    .filter(propertyUri -> targetOntology.getOntProperty(propertyUri) == null)
+                    .collect(Collectors.toSet());
+            resourcesToCreate.forEach(targetOntology::createOntResource);
+        }, forkJoinPool);
+        CompletableFuture.allOf(sourceFuture, targetFuture).join();
+
+        sourceFuture = CompletableFuture.runAsync(() -> {
+            Set<String> resourcesToCreate = JenaStreamUtils.toStream(sourceOntology.listStatements())
+                    .parallel()
+                    .filter(statement -> statement.getObject().isResource())
+                    .map(statement -> statement.getObject().asResource().getURI())
+                    .filter(propertyUri -> sourceOntology.getOntProperty(propertyUri) == null)
+                    .collect(Collectors.toSet());
+            resourcesToCreate.forEach(sourceOntology::createOntResource);
+        }, forkJoinPool);
+        targetFuture = CompletableFuture.runAsync(() -> {
+            Set<String> resourcesToCreate = JenaStreamUtils.toStream(targetOntology.listStatements())
+                    .parallel()
+                    .filter(statement -> statement.getObject().isResource())
+                    .map(statement -> statement.getObject().asResource().getURI())
+                    .filter(propertyUri -> targetOntology.getOntProperty(propertyUri) == null)
+                    .collect(Collectors.toSet());
+            resourcesToCreate.forEach(targetOntology::createOntResource);
+        }, forkJoinPool);
+        CompletableFuture.allOf(sourceFuture, targetFuture).join();
+
     }
 
 

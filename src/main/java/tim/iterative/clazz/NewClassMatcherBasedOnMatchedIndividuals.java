@@ -56,7 +56,9 @@ public class NewClassMatcherBasedOnMatchedIndividuals extends IterativeClassAndI
 
     @Override
     public void runIteration() {
-        getInstancesMatchedSinceLastIteration().stream().parallel().forEach(pair -> {
+        getInstancesMatchedSinceLastIteration().stream().parallel()
+                .filter(pair -> pair.getLeft().isIndividual() && pair.getRight().isIndividual())
+                .forEach(pair -> {
             OntResource source = pair.getLeft();
             OntResource target = pair.getRight();
             OntClass sourceType = source.asIndividual().getOntClass();
@@ -69,7 +71,9 @@ public class NewClassMatcherBasedOnMatchedIndividuals extends IterativeClassAndI
             }
         });
 
-        getInstancesMatchedSinceLastIteration().stream().forEach(pair -> {
+        getInstancesMatchedSinceLastIteration().stream().parallel()
+                .filter(pair -> pair.getLeft().isIndividual() && pair.getRight().isIndividual())
+                .forEach(pair -> {
             OntResource source = pair.getLeft();
             OntResource target = pair.getRight();
             OntClass sourceType = source.asIndividual().getOntClass();
