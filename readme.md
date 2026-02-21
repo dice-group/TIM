@@ -1,10 +1,10 @@
-# Master Thesis - TIM: Tiered Iterative Knowledge Graph Matching
+# TIM: Tiered Iterative Knowledge Graph Matching
 
-_This is a Java implementation of the master thesis "TIM: Tiered Iterative Knowledge Graph Matching"_
+_This is a Java implementation of the paper "TIM: Tiered Iterative Knowledge Graph Matching"_
 
 
 ## Reproducibility
-The results of the master thesis can be verified easily using one of two ways:
+The results of the paper can be verified easily using one of two ways:
 1) The accuracy and runtime were computed independently by the Ontology Alignment Evaluation Initiative (OAEI) in the 2025 knowledge graph track.
 You can find the results on the OAEI website: https://oaei.ontologymatching.org/2025/results/knowledgegraph/index.html.
 For the evaluation, we submitted the docker container contained in this repository "tim-1.0-web-latest.tar.gz".
