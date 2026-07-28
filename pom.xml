@@ -61,13 +61,19 @@
                     -->
                     <images>
                         <image>
-                            <name>%a-%v-web</name>
+                            <name>tim:oaei2026</name>
                             <build>
-                                <from>adoptopenjdk/openjdk11:latest</from><!--change it to a docker base image you want - this is just a small image which contains java-->
-                                <assembly><descriptorRef>web</descriptorRef></assembly>
-                                <cmd><shell>java -cp "${project.build.finalName}.${project.packaging}:lib/*" de.uni_mannheim.informatik.dws.melt.receiver_http.Main</shell></cmd>
+                                <from>adoptopenjdk/openjdk11:latest</from>
+                                <assembly>
+                                    <descriptorRef>web</descriptorRef>
+                                </assembly>
+                                <cmd>
+                                    <shell>java -XX:InitialRAMPercentage=10 -XX:MaxRAMPercentage=90 -XX:+ExitOnOutOfMemoryError -cp "${project.build.finalName}.${project.packaging}:lib/*" de.uni_mannheim.informatik.dws.melt.receiver_http.Main</shell>
+                                </cmd>
                                 <workdir>/maven</workdir>
-                                <ports><port>8080</port></ports><!--port exposure to specify on which port the server runs -->
+                                <ports>
+                                    <port>8080</port>
+                                </ports>
                             </build>
                         </image>
                     </images>
